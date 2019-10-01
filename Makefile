@@ -41,120 +41,52 @@ LDSHARED=$(CC)
 CPP=$(CC) -E
 
 VER=2.1
-LIBS=libzd.a
-SHAREDLIB=libzd.so
+PNAME=zd
+PROGS=$(PNAME)c $(PNAME)u
+STATICLIB=lib$(PNAME).a
+SHAREDLIB=lib$(PNAME).so.0
+PLIBS=$(STATICLIB) $(SHAREDLIB)
 
 AR=ar rc
 RANLIB=ranlib
 TAR=tar
 SHELL=/bin/sh
 
-prefix = /usr/local
-exec_prefix = ${prefix}
-libdir = ${exec_prefix}/lib
-includedir = ${prefix}/include
+prefix = /usr
+dirbin = ${prefix}/bin
+dirlib = ${prefix}/lib
+dirinclude = ${prefix}/include
+SRCS = src
 
-OBJS	= adler32.o deflate.o  infblock.o infcodes.o inffast.o \
-          inflate.o inftrees.o infutil.o zd_mem.o trees.o zdelta.o zutil.o
+OBJS = $(SRCS)/adler32.o $(SRCS)/deflate.o $(SRCS)/infblock.o \
+       $(SRCS)/infcodes.o $(SRCS)/inffast.o $(SRCS)/inflate.o \
+       $(SRCS)/inftrees.o $(SRCS)/infutil.o $(SRCS)/zd_mem.o \
+       $(SRCS)/trees.o $(SRCS)/zdelta.o $(SRCS)/zutil.o
 
-TEST_OBJS = example.o minigzip.o
-
-#DISTFILES = README FAQ INDEX ChangeLog configure Make*[a-z0-9] *.[ch] *.mms \
-#  algorithm.txt zlib.3 msdos/Make*[a-z0-9] msdos/zlib.def msdos/zlib.rc \
-#  nt/Make*[a-z0-9] nt/zlib.dnt amiga/Make*.??? os2/M*.os2 os2/zlib.def \
-#  contrib/RE*.contrib contrib/*.txt contrib/asm386/*.asm contrib/asm386/*.c \
-#  contrib/asm386/*.bat contrib/asm386/zlibvc.d?? contrib/asm[56]86/*.?86 \
-#  contrib/asm[56]86/*.S contrib/iostream/*.cpp \
-#  contrib/iostream/*.h  contrib/iostream2/*.h contrib/iostream2/*.cpp \
-#  contrib/untgz/Makefile contrib/untgz/*.c contrib/untgz/*.w32 \
-#  contrib/minizip/[CM]*[pe] contrib/minizip/*.[ch] contrib/minizip/*.[td]?? \
-#  contrib/delphi*/*.???
-
-all: zdc zdu
+all: $(PLIBS) $(PROGS)
 
 test: all
 	@LD_LIBRARY_PATH=.:$(LD_LIBRARY_PATH) ; export LD_LIBRARY_PATH; \
 	echo 'libzd test, using Makefile as reference file';\
 	echo '*** libzd test OK ***' | ./zdc Makefile | ./zdu Makefile
 
-libzd: libzd.a
+libzd: $(STATICLIB) $(SHAREDLIB)
 
-libzd.a: $(OBJS) $(OBJA)
-	$(AR) $@ $(OBJS) 
+$(STATICLIB): $(OBJS)
+	$(AR) $@ $^
 	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
 
-$(SHAREDLIB).$(VER): $(OBJS)
-	$(LDSHARED) -G -o $@ $(OBJS)
-	rm -f $(SHAREDLIB)
-	ln -s $@ $(SHAREDLIB)
+$(SHAREDLIB): $(OBJS)
+	$(LDSHARED) -shared -Wl,-soname,$@ -o $@ $^
 
-zdc: zdc.o $(LIBS)
-	$(CC) $(CFLAGS) -o $@ zdc.o $(LIBS)
+zdc: $(SRCS)/zdc.o $(SHAREDLIB)
+	$(CC) $(CFLAGS) -o $@ $^
 
-zdu: zdu.o $(LIBS)
-	$(CC) $(CFLAGS) -o $@ zdu.o $(LIBS)
-
-_zdc: _zdc.o $(LIBS)
-	$(CC) $(CFLAGS) -o $@ _zdc.o $(LIBS)
-
-_zdu: _zdu.o $(LIBS)
-	$(CC) $(CFLAGS) -o $@ _zdu.o $(LIBS)
-
-install: $(LIBS)
-	-@if [ ! -d $(includedir)  ]; then mkdir $(includedir); fi
-	-@if [ ! -d $(libdir) ]; then mkdir $(libdir); fi
-	cp zdlib.h $(includedir)
-	cp zdconf.h $(includedir)
-	chmod 644 $(includedir)/zdlib.h
-	chmod 644 $(includedir)/zdconf.h
-	cp $(LIBS) $(libdir)
-	cd $(libdir); chmod 755 $(LIBS)
-	-@(cd $(libdir); $(RANLIB) libzd.a || true) >/dev/null 2>&1
-	cd $(libdir); if test -f $(SHAREDLIB).$(VER); then \
-	  rm -f $(SHAREDLIB) $(SHAREDLIB).1; \
-	  ln -s $(SHAREDLIB).$(VER) $(SHAREDLIB); \
-	  ln -s $(SHAREDLIB).$(VER) $(SHAREDLIB).1; \
-	  (ldconfig || true)  >/dev/null 2>&1; \
-	fi
-# The ranlib in install is needed on NeXTSTEP which checks file times
-# ldconfig is for Linux
-
-
-uninstall:
-	cd $(includedir); \
-	v=$(VER); \
-	if test -f zdlib.h; then \
-	  v=`sed -n '/VERSION "/s/.*"\(.*\)".*/\1/p' < zdlib.h`; \
-          rm -f zdlib.h; \
-	fi; \
-	if test -f zdconf.h; then \
-	  v=`sed -n '/VERSION "/s/.*"\(.*\)".*/\1/p' < zdconf.h`; \
-          rm -f zdconf.h; \
-	fi; \
-	cd $(libdir); rm -f libzd.a; \
-	if test -f $(SHAREDLIB).$$v; then \
-	  rm -f $(SHAREDLIB).$$v $(SHAREDLIB) $(SHAREDLIB).1; \
-	fi
+zdu: $(SRCS)/zdu.o $(SHAREDLIB)
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f $(OBJS) *~ zdu zdu.o zdc zdc.o libzd.a libzd.so* so_locations \
-	_zdc _zdc.o _zdu _zdu.o
-
-distclean:	clean
-
-#TODO: fix this
-#dist:
-#	mv Makefile Makefile~; cp -p Makefile.in Makefile
-#	rm -f test.c ztest*.c contrib/minizip/test.zip
-#	d=zlib-`sed -n '/VERSION "/s/.*"\(.*\)".*/\1/p' < zdlib.h`;\
-#	rm -f $$d.tar.gz; \
-#	if test ! -d ../$$d; then rm -f ../$$d; ln -s `pwd` ../$$d; fi; \
-#	files=""; \
-#	for f in $(DISTFILES); do files="$$files $$d/$$f"; done; \
-#	cd ..; \
-#	GZIP=-9 $(TAR) chofz $$d/$$d.tar.gz $$files; \
-#	if test ! -d $$d; then rm -f $$d; fi
-#	mv Makefile~ Makefile
+	rm -fv $(OBJS) *~ $(SRCS)/zdu.o zdc $(SRCS)/zdc.o $(PROGS) $(PLIBS) so_locations
 
 tags:	
 	etags *.[ch]
@@ -164,24 +96,33 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-adler32.o:  zdconf.h zdlib.h
-compress.o:  zdconf.h zdlib.h
-deflate.o: deflate.h zutil.h  zdconf.h zdlib.h
-infblock.o: infblock.h inftrees.h infcodes.h infutil.h
-infblock.o: zutil.h  zdconf.h zdlib.h
-infcodes.o: zutil.h  zdconf.h zdlib.h
-infcodes.o: inftrees.h infblock.h infcodes.h infutil.h inffast.h zdlib.h
-inffast.o: zutil.h  zdconf.h inftrees.h zdlib.h
-inffast.o: infblock.h infcodes.h infutil.h inffast.h zdlib.h
-inflate.o: zutil.h  zdconf.h infblock.h zdlib.h
-inftrees.o: zutil.h  zdconf.h inftrees.h zdlib.h
-infutil.o: zutil.h  zdconf.h infblock.h inftrees.h
-infutil.o: infcodes.h infutil.h zdlib.h
-trees.o: deflate.h zutil.h  zdconf.h trees.h zdlib.h
-zutil.o: zutil.h  zdconf.h zdlib.h
-zdelta.o: zutil.h tailor.h  zdconf.h zdlib.h
-zdc.o: zd_mem.h zdlib.h
-zdu.o: zd_mem.h zdlib.h
+$(SRCS)/adler32.o: $(SRCS)/zdconf.h $(SRCS)/zdlib.h
+$(SRCS)/deflate.o: $(SRCS)/deflate.h $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
+$(SRCS)/infblock.o: $(SRCS)/infblock.h $(SRCS)/inftrees.h $(SRCS)/infcodes.h $(SRCS)/infutil.h $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
+$(SRCS)/infcodes.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h $(SRCS)/inftrees.h $(SRCS)/infblock.h $(SRCS)/infcodes.h $(SRCS)/infutil.h $(SRCS)/inffast.h $(SRCS)/zdlib.h
+$(SRCS)/inffast.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/inftrees.h $(SRCS)/zdlib.h $(SRCS)/infblock.h $(SRCS)/infcodes.h $(SRCS)/infutil.h $(SRCS)/inffast.h $(SRCS)/zdlib.h
+$(SRCS)/inflate.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/infblock.h $(SRCS)/zdlib.h
+$(SRCS)/inftrees.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/inftrees.h $(SRCS)/zdlib.h
+$(SRCS)/infutil.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/infblock.h $(SRCS)/inftrees.h $(SRCS)/infcodes.h $(SRCS)/infutil.h $(SRCS)/zdlib.h
+$(SRCS)/trees.o: $(SRCS)/deflate.h $(SRCS)/zutil.h  $(SRCS)/zdconf.h $(SRCS)/trees.h $(SRCS)/zdlib.h
+$(SRCS)/zutil.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
+$(SRCS)/zdelta.o: $(SRCS)/zutil.h $(SRCS)/tailor.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
+$(SRCS)/zd_mem.o: $(SRCS)/zd_mem.h
+$(SRCS)/zdc.o: $(SRCS)/zd_mem.h $(SRCS)/zdlib.h
+$(SRCS)/zdu.o: $(SRCS)/zd_mem.h $(SRCS)/zdlib.h
 
-_zdc.o: zd_mem.h zdlib.h
-_zdu.o: zd_mem.h zdlib.h
+install: $(PROGS)
+	install -d $(dirinclude)
+	install -d $(dirlib)
+	install -d $(dirbin)
+	install -m 0644 $(SRCS)/zdlib.h $(dirinclude)
+	install -m 0644 $(SRCS)/zdconf.h $(dirinclude)
+	install -m 0644 $(STATICLIB) $(dirlib)
+	install -m 0644 $(SHAREDLIB) $(dirlib)/$(SHAREDLIB).$(VER)
+	install -m 0755 $(PROGS) $(dirbin)
+	ln -s $(SHAREDLIB).$(VER) $(dirlib)/$(SHAREDLIB)
+
+uninstall:
+	rm -fv $(dirinclude)/zdlib.h $(dirinclude)/zdconf.h
+	rm -fv $(dirlib)/$(STATICLIB) $(dirlib)/$(SHAREDLIB).$(VER) $(dirlib)/$(SHAREDLIB)
+	rm -fv $(dirbin)/$(PNAME)u $(dirbin)/$(PNAME)c
