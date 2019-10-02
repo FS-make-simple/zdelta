@@ -42,7 +42,7 @@ CPP=$(CC) -E
 
 VER=2.1
 PNAME=zd
-PROGS=$(PNAME)c $(PNAME)u
+PROGS=$(PNAME)elta
 STATICLIB=lib$(PNAME).a
 SHAREDLIB=lib$(PNAME).so.0
 PLIBS=$(STATICLIB) $(SHAREDLIB)
@@ -79,14 +79,11 @@ $(STATICLIB): $(OBJS)
 $(SHAREDLIB): $(OBJS)
 	$(LDSHARED) -shared -Wl,-soname,$@ -o $@ $^
 
-zdc: $(SRCS)/zdc.o $(SHAREDLIB)
-	$(CC) $(CFLAGS) -o $@ $^
-
-zdu: $(SRCS)/zdu.o $(SHAREDLIB)
+$(PROGS): $(SRCS)/zd.o $(SHAREDLIB)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -fv $(OBJS) *~ $(SRCS)/zdu.o zdc $(SRCS)/zdc.o $(PROGS) $(PLIBS) so_locations
+	rm -fv $(OBJS) *~ $(SRCS)/$(PNAME).o $(PROGS) $(PLIBS) so_locations
 
 tags:	
 	etags *.[ch]
@@ -108,8 +105,7 @@ $(SRCS)/trees.o: $(SRCS)/deflate.h $(SRCS)/zutil.h  $(SRCS)/zdconf.h $(SRCS)/tre
 $(SRCS)/zutil.o: $(SRCS)/zutil.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
 $(SRCS)/zdelta.o: $(SRCS)/zutil.h $(SRCS)/tailor.h $(SRCS)/zdconf.h $(SRCS)/zdlib.h
 $(SRCS)/zd_mem.o: $(SRCS)/zd_mem.h
-$(SRCS)/zdc.o: $(SRCS)/zd_mem.h $(SRCS)/zdlib.h
-$(SRCS)/zdu.o: $(SRCS)/zd_mem.h $(SRCS)/zdlib.h
+$(SRCS)/zd.o: $(SRCS)/zd_mem.h $(SRCS)/zdlib.h
 
 install: $(PROGS)
 	install -d $(dirinclude)
@@ -125,4 +121,4 @@ install: $(PROGS)
 uninstall:
 	rm -fv $(dirinclude)/zdlib.h $(dirinclude)/zdconf.h
 	rm -fv $(dirlib)/$(STATICLIB) $(dirlib)/$(SHAREDLIB).$(VER) $(dirlib)/$(SHAREDLIB)
-	rm -fv $(dirbin)/$(PNAME)u $(dirbin)/$(PNAME)c
+	rm -fv $(dirbin)/$(PROGS)

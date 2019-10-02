@@ -1,6 +1,6 @@
-# zdelta 2.1+
+# zdelta 0.2.1
 
-This is a Git repository containing the source code of the official zdelta 2.1 release, and incorporating patches for bug fixes that have since been discovered. It also adds platform-specific wrapper APIs, for convenience; so far I've added one for Objective-C (supporting iOS and Mac OS X), but I'm open to submissions.
+This is a Git repository containing the source code of the official zdelta 0.2.1 release, and incorporating patches for bug fixes that have since been discovered. It also adds platform-specific wrapper APIs, for convenience; so far I've added one for Objective-C (supporting iOS and Mac OS X), but I'm open to submissions.
 
 ## What is zdelta?
 
@@ -29,13 +29,9 @@ To compile and test, type:
 
     make test
 
-To compile the command line delta compressor, type:
+To compile the command line delta compressor/decompressor, type:
 
-    make zdc 
-
-To compile the command line delta decompressor, type:
-
-    make zdu 
+    make
 
 For multiple reference file support compile with `REFNUM=N` option
 where `N` is the desired number (1..4) of reference files. The default

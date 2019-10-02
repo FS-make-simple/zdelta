@@ -36,18 +36,18 @@ number of reference files the compression may degrade, and/or the memory usage
 may be increased. Do NOT add support for more reference files than you need!!!
 
 The initial motivation for developping zdelta was computing efficient deltas
-of HTML files (having size usually up to 64KB). 
+of HTML files (having size usually up to 64KB).
 That is why the in general the library has poor performance on large files
 - currently this is an area of active research.
 
 The inteface functions are documented in file zdlib.h
 
 The libzd library comes with two command line executables:
-delta compressor:   ./zdc Reference_file [Target_file [Delta_file] ]
-		    ./zdc Reference1..ReferenceN Target Delta
-delta decompressor: ./zdu Reference_file [Delta_file [Target_file] ] 
-                    ./zdu Reference1..ReferenceN Delta Target
-	
+delta compressor:   ./zdelta diff Reference_file [Target_file [Delta_file] ]
+                    ./zdelta diff Reference1..ReferenceN Target Delta
+delta decompressor: ./zdelta patch Reference_file [Delta_file [Target_file] ]
+                    ./zdelta patch Reference1..ReferenceN Delta Target
+
 If the second or the second and the third parameters are omited, zdc/zdu
 will read from the standard input and will write to the standard output.
 If there are N>3 arguments, the first N arguments are considered refernece 
